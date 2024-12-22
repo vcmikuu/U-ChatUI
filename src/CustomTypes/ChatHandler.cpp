@@ -17,7 +17,6 @@
 
 #include "logging.hpp"
 
-#include "FontUtility.hpp"
 #include "ModConfig.hpp"
 
 DEFINE_TYPE(ChatUI, ChatHandler);
@@ -63,7 +62,6 @@ void ChatUI::ChatHandler::Update() {
             text->set_fontSize(3.0f);
             text->set_alignment(TextAlignmentOptions::MidlineLeft);
             text->set_margin(UnityEngine::Vector4(1.0f, 0.0f, 0.0f, 0.0f));
-            SetInternalFont(text->get_gameObject());
             object.GameObject = text->get_gameObject();
         }
     }

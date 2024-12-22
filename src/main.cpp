@@ -14,6 +14,7 @@
 
 #include "TwitchIRC/TwitchIRCClient.hpp"
 #include "TwitchIRC/IRCSocket.hpp"
+
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 
 #include "HMUI/ViewController.hpp"
@@ -24,12 +25,10 @@
 #include "UnityEngine/SceneManagement/SceneManager.hpp"
 
 #include "CustomTypes/ChatHandler.hpp"
-#include "ChatBuilder.hpp"
+#include "Chat/ChatBuilder.hpp"
 #include "logging.hpp"
 #include "ModConfig.hpp"
 #include "ModSettingsViewController.hpp"
-
-#include "WebServer.hpp"
 
 #include <map>
 #include <thread>
@@ -88,6 +87,9 @@ void OnChatMessage(IRCMessage ircMessage, TwitchIRCClient* client) {
 #define JOIN_RETRY_DELAY 3000
 #define CONNECT_RETRY_DELAY 15000
 
+
+
+
 void TwitchIRCThread() {
     if(threadRunning) 
         return;
@@ -128,11 +130,6 @@ void TwitchIRCThread() {
                         if (client.Login("justinfan" + std::to_string(1030307 + rand() % 1030307), "xxx")) {
                             wasConnected = true;
                             AddChatObject("<color=#9D9DA8>Established connection to <color=#0008FF>Twitch</color>");
-
-
-                            AddChatObject("<color=#9D9DA8>Welcome! You are using BETA <color=#0008FF>1.5</color>");
-                            AddChatObject("<color=#9D9DA8>Webserver found: via port <color=#0008FF>4444</color>");
-
                             INFO("Twitch Chat: Logged In!");
                             client.HookIRCCommand("PRIVMSG", OnChatMessage);
                             currentChannel = "";
@@ -153,61 +150,24 @@ void TwitchIRCThread() {
     INFO("Thread Stopped!");
 }
 
-// thanks randomsongpicker that i can learn how to place a button in the menu
-// kiss kiss from me
-//MAKE_HOOK_MATCH(LevelSelectionNavigationControllerDidActivate, &GlobalNamespace::LevelSelectionNavigationController::DidActivate, void, GlobalNamespace::LevelSelectionNavigationController *self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
+//MAKE_HOOK_MATCH(LevelSelectionNavigationControllerDidActivateSongRequestButton, &GlobalNamespace::LevelSelectionNavigationController::DidActivate, void, GlobalNamespace::LevelSelectionNavigationController *self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
 //{
-//    LevelSelectionNavigationControllerDidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+//    LevelSelectionNavigationControllerDidActivateSongRequestButton(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 //
 //    if (firstActivation)
 //    {
-//        UnityEngine::Vector2 sizeDelta = {20, 20};
-//        Button* button = BSML::Lite::CreateUIButton(self->get_transform(), "", "Chat Requests", {20, -20}, sizeDelta);
+//        Button* button = BSML::Lite::CreateUIButton(self->get_transform(), "", "Chat Requests", nullptr);
 //        UnityEngine::Object::DestroyImmediate(button->get_gameObject()->GetComponent<UnityEngine::UI::LayoutElement*>());
 //        UnityEngine::UI::LayoutElement* layoutElement = button->get_gameObject()->GetComponent<UnityEngine::UI::LayoutElement*>();
 //        if(!layoutElement)
 //            layoutElement = button->get_gameObject()->AddComponent<UnityEngine::UI::LayoutElement*>();
-//        layoutElement->set_minWidth(sizeDelta.x);
-//        layoutElement->set_minHeight(sizeDelta.y);
-//        layoutElement->set_preferredWidth(sizeDelta.x);
-//        layoutElement->set_preferredHeight(sizeDelta.y);
-//        layoutElement->set_flexibleWidth(sizeDelta.x);
-//        layoutElement->set_flexibleHeight(sizeDelta.y);
+//        button->get_transform()->set_localScale({2.0f, 3.0f, 2.0f});
+//        button->set_interactable(false);
 //
 //        return;
 //    }
 //
-//    if(Button) 
-//    {
-//        Button->get_gameObject()->SetActive(true);
-//        // If the button has been clicked / active
-//    }
-//    else
-//    {
-        // Button null
-//    }
 //}
-
-
-
-MAKE_HOOK_MATCH(LevelSelectionNavigationControllerDidActivateSongRequestButton, &GlobalNamespace::LevelSelectionNavigationController::DidActivate, void, GlobalNamespace::LevelSelectionNavigationController *self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
-{
-    LevelSelectionNavigationControllerDidActivateSongRequestButton(self, firstActivation, addedToHierarchy, screenSystemEnabling);
-
-    if (firstActivation)
-    {
-        Button* button = BSML::Lite::CreateUIButton(self->get_transform(), "", "Chat Requests", nullptr);
-        UnityEngine::Object::DestroyImmediate(button->get_gameObject()->GetComponent<UnityEngine::UI::LayoutElement*>());
-        UnityEngine::UI::LayoutElement* layoutElement = button->get_gameObject()->GetComponent<UnityEngine::UI::LayoutElement*>();
-        if(!layoutElement)
-            layoutElement = button->get_gameObject()->AddComponent<UnityEngine::UI::LayoutElement*>();
-        button->get_transform()->set_localScale({2.0f, 3.0f, 2.0f});
-        button->set_interactable(false);
-
-        return;
-    }
-
-}
 
 MAKE_HOOK_MATCH(SceneManager_Internal_ActiveSceneChanged,
                 &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged,
@@ -253,14 +213,13 @@ MOD_EXPORT_FUNC void late_load() {
     custom_types::Register::AutoRegister();
     BSML::Init();
 
-
     BSML::Register::RegisterMainMenu("ChatUI", "ChatUI", "TODO Hover hint", DidActivate);
 
+    INFO("Connecting to the Twitch EventSub WS");
+    RunTwitchClient();
 
-
-
-    INFO("Starting ChatUI Webserver..");
-    WebServer::start();
+    //INFO("Starting ChatUI Webserver..");
+    //WebServer::start();
 
 
     INFO("Installing hooks...");

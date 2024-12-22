@@ -1,16 +1,22 @@
 #include "HMUI/ViewController.hpp"
 #include "HMUI/Touchable.hpp"
+
 #include "bsml/shared/BSML.hpp"
+
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 #include "UnityEngine/RectOffset.hpp"
 #include "UnityEngine/RectTransform.hpp"
 #include "UnityEngine/UI/RectMask2D.hpp"
+
 #include "HMUI/CurvedCanvasSettings.hpp"
+
 #include "TMPro/TextMeshProUGUI.hpp"
+
 #include "VRUIControls/VRGraphicRaycaster.hpp"
+
 #include "bsml/shared/BSML/Components/Backgroundable.hpp"
 
-#include "ChatBuilder.hpp"
+#include "Chat/ChatBuilder.hpp"
 #include "logging.hpp"
 
 using namespace BSML;

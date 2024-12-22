@@ -1,21 +1,27 @@
-#include "WebServer.hpp"
-#include <httplib.h>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <thread>
 #include <filesystem>
+
+#include <HTTP/httplib.h>
+#include "HTTP/host_server.hpp"
+
 #include "main.hpp"
-#include "json.hpp"
+
+#include "JSON/json.hpp"
+
 #include "logging.hpp"
-#include "CustomTypes/ChatHandler.hpp"
-#include "ChatBuilder.hpp"
 #include "ModConfig.hpp"
 
-std::string GlobalConfigPath() {
-    static std::string path = Configuration::getConfigFilePath(modInfo);
-    return path;
-}
+#include "CustomTypes/ChatHandler.hpp"
+#include "ChatBuilder.hpp"
+
+//std::string GlobalConfigPath() {
+//    static std::string path = Configuration::getConfigFilePath(modInfo);
+//    return path;
+//}
 
 namespace WebServer
 {
@@ -26,7 +32,7 @@ namespace WebServer
         std::ifstream file(filePath);
         if (!file.is_open())
         {
-            return "<html><body><h1>404 Not Found</h1></body></html>"; // Basic 404 response
+            return "<html><body><h1>404 Not Found</h1></body></html>";
         }
 
         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -406,7 +412,6 @@ createFloatingBoxes();
                         {
             httplib::Server server;
 
-            // Optional: Add a simple route for testing
             
             server.Get("/", [](const httplib::Request & /*req*/, httplib::Response &res) {
     res.set_content(html, "text/html");
@@ -444,25 +449,6 @@ createFloatingBoxes();
     }
   });
 
-
-              server.Post("/senduimesssage", [](const httplib::Request & req, httplib::Response &res) {
-    try {
-        INFO("ChatUI - UI Message Request pinged by API");
-        res.set_content("100", "text/plain");
-        std::string reqmessage = req.body;
-        //AddChatObject("A: " + reqmessage);
-
-        // Code 100 means read success
-        // If it's completely invalid, it won't be accepted.
-
-    } catch (const std::exception& e) {
-        INFO("ChatUI - Bad Request has been made for senduimessage");
-        res.status = 400;  // Bad request
-        res.set_content("Invalid Request", "text/plain");
-    }
-  });
-
-          
 
             // Start the server on port 4444
             if (!server.listen("localhost", 4444)) {

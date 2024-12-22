@@ -4,6 +4,8 @@
 
 #include <string>
 
+// I'm proud of this useless script.. :DD 
+
 class HTTPServer {
 public:
     HTTPServer(int port = 4141);
@@ -22,4 +24,4 @@ private:
     void sendResponse(int clientSocket, const std::string& content);
 };
 
-#endif // HTTP_SERVER_HPP
+#endif 
