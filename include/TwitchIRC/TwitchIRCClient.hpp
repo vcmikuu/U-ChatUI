@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <unordered_map>
 #include "IRCSocket.hpp"
 
 class TwitchIRCClient;
@@ -58,12 +59,13 @@ struct IRCCommandPrefix
 struct IRCMessage
 {
     IRCMessage();
-    IRCMessage(std::string cmd, IRCCommandPrefix p, std::vector<std::string> params) :
-        command(cmd), prefix(p), parameters(params) {};
+    IRCMessage(std::string cmd, IRCCommandPrefix p, std::vector<std::string> params, std::unordered_map<std::string, std::string> t = {}) :
+        command(cmd), prefix(p), parameters(params), tags(t) {};
 
     std::string command;
     IRCCommandPrefix prefix;
     std::vector<std::string> parameters;
+    std::unordered_map<std::string, std::string> tags;
 };
 
 struct IRCCommandHook

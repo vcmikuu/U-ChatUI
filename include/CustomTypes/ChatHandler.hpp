@@ -5,12 +5,13 @@
 
 #include "UnityEngine/MonoBehaviour.hpp"
 #include "UnityEngine/RectTransform.hpp"
+#include "UnityEngine/GameObject.hpp"
 
 #include "custom-types/shared/macros.hpp"
 
 #include "ChatObject.hpp"
 
-DECLARE_CLASS_CODEGEN(ChatUI, ChatHandler, UnityEngine::MonoBehaviour,
+DECLARE_CLASS_CODEGEN(ChatUI, ChatHandler, UnityEngine::MonoBehaviour) {
 
     private:
         std::vector<ChatObject> chatObjects;
@@ -31,4 +32,4 @@ DECLARE_CLASS_CODEGEN(ChatUI, ChatHandler, UnityEngine::MonoBehaviour,
 
     DECLARE_OVERRIDE_METHOD(void, Finalize, il2cpp_utils::FindMethod("System", "Object", "Finalize"));
     
-)
+};

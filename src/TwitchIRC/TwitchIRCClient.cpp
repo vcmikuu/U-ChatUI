@@ -55,6 +55,8 @@ bool TwitchIRCClient::Login(std::string nick, std::string oauth)
 {
 	if (!oauth.empty() && !SendIRC("PASS " + oauth))
 		return false;
+    if (!SendIRC("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership"))
+        return false;
 	if (SendIRC("NICK " + nick))
 		return true;
 
@@ -110,9 +112,25 @@ void TwitchIRCClient::Parse(std::string data)
 {
     std::string original(data);
     IRCCommandPrefix cmdPrefix;
+    std::unordered_map<std::string, std::string> tags;
+
+    if (!data.empty() && data[0] == '@') {
+        size_t tagsEnd = data.find(' ');
+        if (tagsEnd != std::string::npos) {
+            std::string tagsPart = data.substr(1, tagsEnd - 1);
+            auto tagList = split(tagsPart, ';');
+            for (auto const& tagEntry : tagList) {
+                auto kv = split(tagEntry, '=');
+                if (!kv.empty()) {
+                    tags.emplace(kv[0], kv.size() > 1 ? kv[1] : "");
+                }
+            }
+            data = data.substr(tagsEnd + 1);
+        }
+    }
 
     // if command has prefix
-    if (data.substr(0, 1) == ":")
+    if (!data.empty() && data.substr(0, 1) == ":")
     {
         cmdPrefix.Parse(data);
         data = data.substr(data.find(" ") + 1);
@@ -161,7 +179,7 @@ void TwitchIRCClient::Parse(std::string data)
         return;
     }
 
-    IRCMessage ircMessage(command, cmdPrefix, parameters);
+    IRCMessage ircMessage(command, cmdPrefix, parameters, tags);
 
     // Try to call hook (if any matches)
     CallHook(command, ircMessage);
@@ -187,7 +205,6 @@ void TwitchIRCClient::CallHook(std::string command, IRCMessage message)
         if (itr->command == command)
         {
             (*(itr->function))(message, this);
-            break;
         }
     }
 }

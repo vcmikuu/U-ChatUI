@@ -35,6 +35,8 @@ void DidActivate(ViewController* self, bool firstActivation, bool addedToHierarc
         LayoutElement* layoutElement = underscoreButton->GetComponent<LayoutElement*>();
         layoutElement->set_minWidth(4.0f);
 
+        AddConfigValueToggle(parent, getModConfig().ShowEventMessages);
+
         AddConfigValueIncrementVector3(parent, getModConfig().PositionMenu, 2, 0.05f);
         AddConfigValueIncrementVector3(parent, getModConfig().RotationMenu, 0, 1.0f);
         AddConfigValueIncrementVector2(parent, getModConfig().SizeMenu, 0, 1.0f);

@@ -20,12 +20,13 @@ using namespace HMUI;
 using namespace TMPro;
 
 //BAD STUFF I KNOW
+UnityEngine::GameObject* chatGameObject = nullptr;
 ChatUI::ChatHandler* chatHandler = nullptr;
 
 void CreateChatGameObject() {
     if(chatHandler) 
         return;
-    UnityEngine::GameObject* chatGameObject = BSML::Lite::CreateCanvas();
+    chatGameObject = BSML::Lite::CreateCanvas();
     Object::DestroyImmediate(chatGameObject->GetComponent<VRUIControls::VRGraphicRaycaster*>());
     Object::DontDestroyOnLoad(chatGameObject);
     

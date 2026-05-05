@@ -27,6 +27,7 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <cctype>
 
 std::unordered_set<std::string> Blacklist;
 
@@ -63,6 +64,82 @@ void OnChatMessage(IRCMessage ircMessage, TwitchIRCClient* client) {
     std::string text = "<color=" + usersColorCache[username] + ">" + username +
                        "</color>: " + message;
     AddChatObject(text);
+}
+
+static bool ShouldShowEventMessages() {
+    return getModConfig().ShowEventMessages.GetValue();
+}
+
+static int ParseTierNumber(std::string const& plan) {
+    if (plan == "Prime") return 1;
+    if (plan == "1000") return 1;
+    if (plan == "2000") return 2;
+    if (plan == "3000") return 3;
+    return 1;
+}
+
+void OnUserNotice(IRCMessage ircMessage, TwitchIRCClient* client) {
+    (void)client;
+    if (!ShouldShowEventMessages()) return;
+    auto msgIdIt = ircMessage.tags.find("msg-id");
+    if (msgIdIt == ircMessage.tags.end()) return;
+
+    auto planIt = ircMessage.tags.find("msg-param-sub-plan");
+    int tier = ParseTierNumber(planIt != ircMessage.tags.end() ? planIt->second : "1000");
+
+    if (msgIdIt->second == "sub" || msgIdIt->second == "resub") {
+        auto displayNameIt = ircMessage.tags.find("display-name");
+        std::string username = displayNameIt != ircMessage.tags.end() && !displayNameIt->second.empty()
+            ? displayNameIt->second
+            : ircMessage.prefix.nick;
+        AddChatObject(username + " subscribed with Tier " + std::to_string(tier));
+        return;
+    }
+
+    if (msgIdIt->second == "subgift" || msgIdIt->second == "anonsubgift") {
+        auto gifterIt = ircMessage.tags.find("display-name");
+        auto recipientIt = ircMessage.tags.find("msg-param-recipient-display-name");
+        std::string gifter = (gifterIt != ircMessage.tags.end() && !gifterIt->second.empty()) ? gifterIt->second : "Someone";
+        std::string recipient = (recipientIt != ircMessage.tags.end() && !recipientIt->second.empty()) ? recipientIt->second : "someone";
+        AddChatObject(gifter + " gifted " + recipient + " a Tier " + std::to_string(tier) + " Subscription");
+        return;
+    }
+}
+
+void OnBitsMessage(IRCMessage ircMessage, TwitchIRCClient* client) {
+    (void)client;
+    if (!ShouldShowEventMessages()) return;
+    auto bitsIt = ircMessage.tags.find("bits");
+    if (bitsIt == ircMessage.tags.end() || bitsIt->second.empty()) return;
+
+    int bits = 0;
+    try {
+        bits = std::stoi(bitsIt->second);
+    } catch (...) {
+        return;
+    }
+    if (bits <= 0) return;
+
+    auto displayNameIt = ircMessage.tags.find("display-name");
+    std::string username = displayNameIt != ircMessage.tags.end() && !displayNameIt->second.empty()
+        ? displayNameIt->second
+        : ircMessage.prefix.nick;
+    AddChatObject(username + " gave you " + std::to_string(bits) + " Bits!");
+}
+
+void OnFollowFallback(IRCMessage ircMessage, TwitchIRCClient* client) {
+    (void)client;
+    if (!ShouldShowEventMessages()) return;
+    if (ircMessage.parameters.empty()) return;
+
+    std::string message = ircMessage.parameters.back();
+    auto markerPos = message.find(" is now following");
+    if (markerPos == std::string::npos) return;
+
+    std::string username = message.substr(0, markerPos);
+    while (!username.empty() && std::isspace(static_cast<unsigned char>(username.back()))) username.pop_back();
+    if (username.empty()) return;
+    AddChatObject(username + " is now following you");
 }
 
 #define JOIN_RETRY_DELAY 3000
@@ -110,6 +187,9 @@ void TwitchIRCThread() {
                             AddChatObject("<color=#FFFFFFFF>Logged In!</color>");
                             INFO("Twitch Chat: Logged In!");
                             client.HookIRCCommand("PRIVMSG", OnChatMessage);
+                            client.HookIRCCommand("PRIVMSG", OnBitsMessage);
+                            client.HookIRCCommand("PRIVMSG", OnFollowFallback);
+                            client.HookIRCCommand("USERNOTICE", OnUserNotice);
                             currentChannel = "";
                         }
                     }
