@@ -214,8 +214,9 @@ MAKE_HOOK_MATCH(SceneManager_Internal_ActiveSceneChanged,
     SceneManager_Internal_ActiveSceneChanged(prevScene, nextScene);
     if(nextScene.IsValid()) {
         std::string sceneName = nextScene.get_name();
-        if(sceneName.find("Menu") != std::string::npos) {
-            BSML::MainThreadScheduler::Schedule(
+        if(sceneName == "MainMenu") {
+            BSML::MainThreadScheduler::ScheduleAfterTime(
+                0.25f,
                 [] {
                     if(!chatHandler)
                         CreateChatGameObject();
