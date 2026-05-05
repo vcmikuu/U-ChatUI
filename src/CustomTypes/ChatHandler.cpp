@@ -28,7 +28,7 @@ using namespace UnityEngine::UI;
 using namespace TMPro;
 
 void ChatUI::ChatHandler::Update() {
-    if(!LayoutTransform && !Canvas) return;
+    if(!LayoutTransform || !Canvas) return;
 
     Scene activeScene = SceneManager::GetActiveScene();
     if(activeScene.IsValid()){
@@ -58,8 +58,8 @@ void ChatUI::ChatHandler::Update() {
         } else {
             TextMeshProUGUI* text = BSML::Lite::CreateText(LayoutTransform, object.Text);
             Canvas->GetComponent<RectTransform*>()->set_sizeDelta(_textRsize);
-            // bad word wrapping
             text->set_enableWordWrapping(true);
+            text->set_overflowMode(TextOverflowModes::Overflow);
             text->set_fontSize(3.2f);
             text->set_alignment(TextAlignmentOptions::MidlineLeft);
             text->set_margin(UnityEngine::Vector4(1.0f, 0.0f, 0.0f, 0.0f));
@@ -83,9 +83,10 @@ void ChatUI::ChatHandler::SetRotation(UnityEngine::Vector3 rotation) {
 }
 
 void ChatUI::ChatHandler::SetSize(UnityEngine::Vector2 size) {
-    if(Canvas)
+    if(Canvas) {
         _textRsize = UnityEngine::Vector2(size);
         Canvas->GetComponent<RectTransform*>()->set_sizeDelta(_textRsize);
+    }
 }
 
 void ChatUI::ChatHandler::AddChatObject(ChatObject object) {

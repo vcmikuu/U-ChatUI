@@ -41,9 +41,9 @@ void CreateChatGameObject() {
     ContentSizeFitter* contentSizeFitter = layout->GetComponent<ContentSizeFitter*>();
     contentSizeFitter->set_horizontalFit(ContentSizeFitter::FitMode::Unconstrained);
     contentSizeFitter->set_verticalFit(ContentSizeFitter::FitMode::PreferredSize);
-    layout->set_childControlWidth(false);
+    layout->set_childControlWidth(true);
     layout->set_childControlHeight(true);
-    layout->set_childForceExpandWidth(true);
+    layout->set_childForceExpandWidth(false);
     layout->set_childForceExpandHeight(false);
     layout->set_childAlignment(TextAnchor::LowerLeft);
     GameObject* layoutGameObject = layout->get_gameObject();
