@@ -8,7 +8,7 @@
 // field values from in the game It also allows creating objects, configuration,
 // and importantly, hooking methods to modify their values
 #include "beatsaber-hook/shared/utils/utils.h"
-#include "paper/shared/logger.hpp"
+#include "paper2_scotland2/shared/logger.hpp"
 
 /// @brief A logger, useful for printing debug messages
 /// @return
