@@ -164,7 +164,7 @@ jobs:
               done
           }
           add_files qpm.json qpm.shared.json mod.json mod.template.json
-          git diff --cached --quiet || git commit -m "Bump dependencies for ${{ env.game_version }}"
+          git commit -m "Bump dependencies for ${{ env.game_version }}"
           git reset --hard
 
       - name: Create Pull Request
