@@ -122,8 +122,10 @@ jobs:
 
       - name: Rename build artifacts
         run: |
-          mv "./build/debug/${{ needs.qpm_info.outputs.override_so_name }}" "./debug_${{ needs.qpm_info.outputs.override_so_name }}"
           mv "./build/${{ needs.qpm_info.outputs.override_so_name }}" "./${{ needs.qpm_info.outputs.override_so_name }}"
+          if [ -f "./build/debug/${{ needs.qpm_info.outputs.override_so_name }}" ]; then
+            mv "./build/debug/${{ needs.qpm_info.outputs.override_so_name }}" "./debug_${{ needs.qpm_info.outputs.override_so_name }}"
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -132,7 +134,7 @@ jobs:
           if-no-files-found: error
           path: |
             ./${{ needs.qpm_info.outputs.override_so_name }}
-            ./debug_${{ needs.qpm_info.outputs.override_so_name }}
+            ./debug_*.so
             ${{ needs.qpm_info.outputs.qmod_output_path }}
 
   release:
@@ -153,8 +155,13 @@ jobs:
         id: lib_info
         run: |
           cd output
-          echo "LIBNAME=$(basename "${{ needs.qpm_info.outputs.override_so_name }}")" | tee -a $GITHUB_OUTPUT
-          echo "BUILD_ID=$(readelf -n "debug_$(basename "${{ needs.qpm_info.outputs.override_so_name }}")" | grep -Po "(?<=Build ID: )[0-9a-f]+")" | tee -a $GITHUB_OUTPUT
+          LIBNAME="$(basename "${{ needs.qpm_info.outputs.override_so_name }}")"
+          DEBUG_LIB="debug_${LIBNAME}"
+          if [ ! -f "$DEBUG_LIB" ]; then
+            DEBUG_LIB="$LIBNAME"
+          fi
+          echo "LIBNAME=$LIBNAME" | tee -a "$GITHUB_OUTPUT"
+          echo "BUILD_ID=$(readelf -n "$DEBUG_LIB" | grep -Po "(?<=Build ID: )[0-9a-f]+")" | tee -a "$GITHUB_OUTPUT"
 
       - name: Calculate SHA-256 of the qmod file
         id: qmodsha
