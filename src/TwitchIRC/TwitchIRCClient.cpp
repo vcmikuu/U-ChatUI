@@ -47,7 +47,7 @@ void TwitchIRCClient::Disconnect()
 
 bool TwitchIRCClient::SendIRC(std::string data)
 {
-    data.append("\n");
+    data.append("\r\n");
     return _socket.SendData(data.c_str());
 }
 
@@ -55,9 +55,9 @@ bool TwitchIRCClient::Login(std::string nick, std::string oauth)
 {
 	if (!oauth.empty() && !SendIRC("PASS " + oauth))
 		return false;
-    if (!SendIRC("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership"))
+	if (!SendIRC("NICK " + nick))
         return false;
-	if (SendIRC("NICK " + nick))
+    if (SendIRC("CAP REQ :twitch.tv/commands twitch.tv/tags twitch.tv/membership"))
 		return true;
 
     return false;
@@ -97,15 +97,48 @@ bool TwitchIRCClient::SendChatMessage(std::string message)
 void TwitchIRCClient::ReceiveData()
 {
     std::string buffer = _socket.ReceiveData();
+    if (buffer.empty())
+        return;
 
-    std::string line;
-    std::istringstream iss(buffer);
-    while(getline(iss, line))
+    _receiveBuffer.append(buffer);
+
+    size_t lineEnd;
+    while((lineEnd = _receiveBuffer.find('\n')) != std::string::npos)
     {
-        if (line.find("\r") != std::string::npos)
+        std::string line = _receiveBuffer.substr(0, lineEnd);
+        _receiveBuffer.erase(0, lineEnd + 1);
+        if (!line.empty() && line.back() == '\r')
             line = line.substr(0, line.size() - 1);
-        Parse(line);
+        if (!line.empty())
+            Parse(line);
     }
+}
+
+static std::string ReadTwitchTag(std::string const& text)
+{
+    std::string newText;
+    for (size_t i = 0; i < text.size(); i++)
+    {
+        if (text[i] == '\\' && i + 1 < text.size())
+        {
+            i++;
+            if (text[i] == 's')
+                newText.push_back(' ');
+            else if (text[i] == ':')
+                newText.push_back(';');
+            else if (text[i] == 'r')
+                newText.push_back('\r');
+            else if (text[i] == 'n')
+                newText.push_back('\n');
+            else
+                newText.push_back(text[i]);
+        }
+        else
+        {
+            newText.push_back(text[i]);
+        }
+    }
+    return newText;
 }
 
 void TwitchIRCClient::Parse(std::string data)
@@ -120,9 +153,11 @@ void TwitchIRCClient::Parse(std::string data)
             std::string tagsPart = data.substr(1, tagsEnd - 1);
             auto tagList = split(tagsPart, ';');
             for (auto const& tagEntry : tagList) {
-                auto kv = split(tagEntry, '=');
-                if (!kv.empty()) {
-                    tags.emplace(kv[0], kv.size() > 1 ? kv[1] : "");
+                size_t equals = tagEntry.find('=');
+                if (equals == std::string::npos) {
+                    tags.emplace(tagEntry, "");
+                } else {
+                    tags.emplace(tagEntry.substr(0, equals), ReadTwitchTag(tagEntry.substr(equals + 1)));
                 }
             }
             data = data.substr(tagsEnd + 1);
@@ -152,6 +187,7 @@ void TwitchIRCClient::Parse(std::string data)
         else
         {
             size_t pos1 = 0, pos2;
+            bool gotTrailing = false;
             while ((pos2 = data.find(" ", pos1)) != std::string::npos)
             {
                 parameters.push_back(data.substr(pos1, pos2 - pos1));
@@ -159,11 +195,12 @@ void TwitchIRCClient::Parse(std::string data)
                 if (data.substr(pos1, 1) == ":")
                 {
                     parameters.push_back(data.substr(pos1 + 1));
+                    gotTrailing = true;
                     break;
                 }
             }
-            if (parameters.empty())
-                parameters.push_back(data);
+            if (!gotTrailing && pos1 < data.size())
+                parameters.push_back(data.substr(pos1));
         }
     }
 
@@ -193,6 +230,11 @@ void TwitchIRCClient::HookIRCCommand(std::string command, void (*function)(IRCMe
     hook.function = function;
 
     _hooks.push_back(hook);
+}
+
+void TwitchIRCClient::ClearIRCCommands()
+{
+    _hooks.clear();
 }
 
 void TwitchIRCClient::CallHook(std::string command, IRCMessage message)

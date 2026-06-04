@@ -99,6 +99,7 @@ public:
     void ReceiveData();
 
     void HookIRCCommand(std::string /*command*/, void (*function)(IRCMessage /*message*/, TwitchIRCClient* /*client*/));
+    void ClearIRCCommands();
 
     void Parse(std::string /*data*/);
 
@@ -111,6 +112,7 @@ private:
     std::list<IRCCommandHook> _hooks;
 
     std::string _currentChannel;
+    std::string _receiveBuffer;
 };
 
 #endif
