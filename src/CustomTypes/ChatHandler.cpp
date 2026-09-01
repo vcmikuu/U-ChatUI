@@ -1,6 +1,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <chrono>
 
 #include "beatsaber-hook/shared/utils/utils.h"
 
@@ -40,6 +41,46 @@ void ChatUI::ChatHandler::Update() {
             position = getModConfig().PositionGame.GetValue();
             rotation = getModConfig().RotationGame.GetValue();
             size = getModConfig().SizeGame.GetValue();
+        }
+        static bool _posSaveInit = false;
+        static UnityEngine::Vector3 lastMenuPos;
+        static UnityEngine::Vector3 lastGamePos;
+        static std::chrono::steady_clock::time_point lastMenuSaveTime;
+        static std::chrono::steady_clock::time_point lastGameSaveTime;
+        if(!_posSaveInit) {
+            lastMenuPos = getModConfig().PositionMenu.GetValue();
+            lastGamePos = getModConfig().PositionGame.GetValue();
+            lastMenuSaveTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+            lastGameSaveTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+            _posSaveInit = true;
+        }
+        bool usingGame = (sceneName == "GameCore" || getModConfig().ForceGame.GetValue());
+        auto now = std::chrono::steady_clock::now();
+        const float posEpsilon = 0.001f;
+        try {
+            if(!usingGame) {
+                if (std::abs(position.x - lastMenuPos.x) > posEpsilon || std::abs(position.y - lastMenuPos.y) > posEpsilon || std::abs(position.z - lastMenuPos.z) > posEpsilon) {
+                    if(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMenuSaveTime).count() > 1000) {
+                        lastMenuPos = position;
+                        lastMenuSaveTime = now;
+                        getModConfig().PositionMenu.SetValue(position);
+                        getModConfig().Save();
+                        INFO("ChatUI: Saved PositionMenu to config");
+                    }
+                }
+            } else {
+                if (std::abs(position.x - lastGamePos.x) > posEpsilon || std::abs(position.y - lastGamePos.y) > posEpsilon || std::abs(position.z - lastGamePos.z) > posEpsilon) {
+                    if(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastGameSaveTime).count() > 1000) {
+                        lastGamePos = position;
+                        lastGameSaveTime = now;
+                        getModConfig().PositionGame.SetValue(position);
+                        getModConfig().Save();
+                        INFO("ChatUI: Saved PositionGame to config");
+                    }
+                }
+            }
+        } catch(...) {
+            INFO("ChatUI: Failed to save position to config");
         }
         SetPosition(position);
         SetRotation(rotation);

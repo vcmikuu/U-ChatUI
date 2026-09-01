@@ -184,6 +184,12 @@ void TwitchIRCThread() {
                         currentChannel = targetChannel;
                         INFO("Twitch Chat: Joined Channel {}!", currentChannel);
                         AddChatObject("<color=#FFFFFFFF>Joined Channel:</color> <color=#FFB300FF>" + currentChannel + "</color>");
+                        try {
+                            getModConfig().Channel.SetValue(currentChannel);
+                            getModConfig().Save();
+                        } catch(...) {
+                            INFO("Twitch Chat: Failed to save channel to config");
+                        }
                     }
                 }
             }
